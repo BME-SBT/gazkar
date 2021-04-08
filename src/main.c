@@ -21,7 +21,7 @@ volatile uint8_t tim1_cmp = 255;
 
 int main()
 {
-    DDRB = (1 << 4) | (1 << 2);
+    DDRB = (1 << 4);
     // ADC setup:
     ADMUX = 0b0011 | (1 << ADLAR); // input: PB3, left adjust, ref:VCC
     ADCSRA = (1 << ADIE) | 0b111;  // clk=62.5kHz, complete IT
@@ -71,7 +71,6 @@ ISR(ADC_vect)
     uint8_t new = (ADCH >> 1) | (1 << 7);      // adc value -> 128..255
     uint16_t temp = (7 * new + tim1_cmp) >> 3; // filter f_0=615Hz
     tim1_cmp = temp;
-    PORTB ^= (1 << 2);
     ADCSRA |= (1 << ADSC); // trigger ADC
     sei();
 }
