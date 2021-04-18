@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name Solar_NYHL)(type KiCad)(uri ${KIPRJMOD}/Solar_NYHL.pretty-20210409T201633Z-001/Solar_NYHL.pretty)(options "")(descr ""))
+)

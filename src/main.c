@@ -16,12 +16,22 @@
 
 #include <avr/interrupt.h>
 
+/*
+ * If enabled:
+ * PB0 will change state when a new PWM period starts
+ * PB1 will change state when a new ADC sample is taken
+ */
+//#define DEBUG_SIGNALS
+
 #define TC1_PRESCALER 0b0111 // Divide by 64
 volatile uint8_t tim1_cmp = 255;
 
 int main()
 {
     DDRB = (1 << 4);
+#ifdef DEBUG_SIGNALS
+    DDRB |= (1 << 0) | (1 << 1);
+#endif
     // ADC setup:
     ADMUX = 0b0011 | (1 << ADLAR); // input: PB3, left adjust, ref:VCC
     ADCSRA = (1 << ADIE) | 0b111;  // clk=62.5kHz, complete IT
@@ -52,6 +62,9 @@ ISR(TIMER0_COMPA_vect)
     cli();
     TCCR1 |= TC1_PRESCALER; // start Timer1
     PORTB |= (1 << 4);      // output ON
+#ifdef DEBUG_SIGNALS
+    PORTB ^= (1 << 0);
+#endif
     sei();
 }
 
@@ -72,5 +85,8 @@ ISR(ADC_vect)
     uint16_t temp = (7 * new + tim1_cmp) >> 3; // filter f_0=615Hz
     tim1_cmp = temp;
     ADCSRA |= (1 << ADSC); // trigger ADC
+#ifdef DEBUG_SIGNALS
+    PORTB ^= (1 << 1);
+#endif
     sei();
 }
