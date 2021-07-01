@@ -1,5 +1,15 @@
 /* Created by Zoltan Marcsek 08.04.2021 */
 /*
+ * PB3 - Potentiometer input
+ * PB4 - PWM output
+ * PB2 - Enable input
+ */
+
+#define ENABLE_ACTIVE_LOW 0 // Set to 0 for active high, 1 for active low
+#define POT_MINIMUM 0       // Scale: 0..255
+#define POT_MAXIMUM 255     // Scale: 0..255
+
+/*
  * CLK frequency: 8MHz
  * 
  * Timer0:  interrupt every 20ms, start Timer1
@@ -61,7 +71,8 @@ ISR(TIMER0_COMPA_vect)
 {
     cli();
     TCCR1 |= TC1_PRESCALER; // start Timer1
-    PORTB |= (1 << 4);      // output ON
+    uint8_t in = ((PINB >> 2) & 0x01) ^ ENABLE_ACTIVE_LOW;
+    PORTB |= (in << 4); // output ON
 #ifdef DEBUG_SIGNALS
     PORTB ^= (1 << 0);
 #endif
@@ -81,8 +92,9 @@ ISR(TIMER1_COMPA_vect)
 ISR(ADC_vect)
 {
     cli();
-    uint8_t new = (ADCH >> 1) | (1 << 7);      // adc value -> 128..255
-    uint16_t temp = (7 * new + tim1_cmp) >> 3; // filter f_0=615Hz
+    uint8_t adc_scaled = ((uint16_t)(ADCH - POT_MINIMUM) * 255) / (POT_MAXIMUM - POT_MINIMUM);
+    uint8_t new = (adc_scaled >> 1) | (1 << 7); // adc value -> 128..255
+    uint16_t temp = (7 * new + tim1_cmp) >> 3;  // filter f_0=615Hz
     tim1_cmp = temp;
     ADCSRA |= (1 << ADSC); // trigger ADC
 #ifdef DEBUG_SIGNALS
